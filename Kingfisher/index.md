@@ -153,6 +153,15 @@ func downloadAndCacheImage(with url: URL,
 
 `ImageFetchLoad`：TODO
 
+```swift
+let barrierQueue: DispatchQueue
+let processQueue: DispatchQueue
+let cancelQueue: DispatchQueue
+var fetchLoads = [URL: ImageFetchLoad]()
+```
+
+RetrieveImageTask 的 cancel 方法会最终调用到 URLSessionDataTask
+
 ### functions
 
 ```swift
@@ -164,3 +173,46 @@ open func downloadImage(with url: URL,
 ```
 
 ## ImageFetchLoad
+
+图片获取加载类
+
+```swift
+class ImageFetchLoad {
+    var contents = [(callback: CallbackPair, options: KingfisherOptionsInfo)]()
+    var responseData = NSMutableData()
+
+    var downloadTaskCount = 0
+    var downloadTask: RetrieveImageDownloadTask?
+    var cancelSemaphore: DispatchSemaphore?
+}
+```
+
+`contents`：回调和配置，一切开始的地方
+
+`responseData`：响应数据
+
+`downloadTaskCount`：下载任务数量
+
+`downloadTask`：下载任务
+
+`cancelSemaphore`：取消请求信号量
+
+## 启动图片下载流程：
+
+KingfisherManager 调用 ImageDownloader，ImageDownloader 持有`[ 图片 url：下载实
+体 ]`的 fetchLoads 字典，搜索字典查找 ImageFetchLoad 实例，如果没有，则新创建一
+个并添加到字典中。
+
+ImageFetchLoad 持有请求的`RetrieveImageDownloadTask`对象。
+
+`RetrieveImageDownloadTask`中包含请求的`URLSessionDataTask`，所属
+的`ImageDownloader`。
+
+最终返回`RetrieveImageTask`实例。结构如下：
+
+```
+RetrieveImageTask
+  |-RetrieveImageDownloadTask
+    |-ImageDownloader (weak)
+    |-URLSessionDataTask
+```
