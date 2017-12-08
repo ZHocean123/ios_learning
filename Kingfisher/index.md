@@ -189,6 +189,10 @@ class ImageFetchLoad {
 
 `contents`：回调和配置，一切开始的地方
 
+```swift
+typealias CallbackPair = (progressBlock: ImageDownloaderProgressBlock?, completionHandler: ImageDownloaderCompletionHandler?)
+```
+
 `responseData`：响应数据
 
 `downloadTaskCount`：下载任务数量
@@ -216,3 +220,14 @@ RetrieveImageTask
     |-ImageDownloader (weak)
     |-URLSessionDataTask
 ```
+
+## 下载过程
+
+URLSession 的 delegate 是`ImageDownloaderSessionHandler`实例，之所以没有使
+用`ImageDownloader`本身作为作为 delegate，是由于 URLSession 再被 invalidated 或
+程序退出之前，会强引用它的 delegate 实例，防止造成循环引用
+。[此 issue](https://github.com/onevcat/Kingfisher/issues/235)有说明
+
+接收到的数据会存储在`ImageFetchLoad`的`responseData`中。
+
+图片下载完成后，进入 process 流程。
